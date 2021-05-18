@@ -14,13 +14,14 @@
 // Variables globales
 //************************************************************************************************
 // SSID & Password
-const char* ssid = "DIGITAL2";  // Enter your SSID here
-const char* password = "digital2";  //Enter your Password here
+const char* ssid = "Nexxt_456560";  // Enter your SSID here
+const char* password = "WadUFE3n";  //Enter your Password here
 
 WebServer server(80);  // Object of WebServer(HTTP port, 80 is defult)
 
 
 uint8_t LED1pin = 2;
+uint8_t Disp;
 bool LED1status = LOW;
 
 //************************************************************************************************
@@ -28,6 +29,9 @@ bool LED1status = LOW;
 //************************************************************************************************
 void setup() {
   Serial.begin(115200);
+  Serial2.begin(115200,SERIAL_8N1,16,17);
+  while(! Serial2);
+  
   Serial.println("Try Connecting to ");
   Serial.println(ssid);
 
@@ -60,6 +64,10 @@ void setup() {
 // loop principal
 //************************************************************************************************
 void loop() {
+  if(Serial2.available()>0){ //Solo entra si hay datos en el buffer serial
+    Disp = Serial2.read();
+    Serial.println(Disp);
+  }
   server.handleClient();
   if (LED1status)
   {

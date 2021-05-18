@@ -110,6 +110,7 @@ void main(void)
                     suma+=1;
                 }
         display(suma);
+        UARTCharPut(UART2_BASE, Disp);
         suma = 0;
 
     }
@@ -138,7 +139,7 @@ void UARTconfig(void){
 void SendString(char* frase){
     //Funcion para poder enviar string mediante UART
     while (*frase){
-        UARTCharPut(UART0_BASE, *frase++);
+        UARTCharPut(UART2_BASE, *frase++);
     }
 }
 
