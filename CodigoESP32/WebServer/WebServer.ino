@@ -21,7 +21,7 @@ WebServer server(80);  // Object of WebServer(HTTP port, 80 is defult)
 
 
 uint8_t LED1pin = 2;
-uint8_t Disp;
+unsigned char Disp;
 bool LED1status = LOW;
 
 //************************************************************************************************

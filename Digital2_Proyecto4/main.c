@@ -11,10 +11,12 @@
 #include "driverlib/timer.h"
 #include "driverlib/systick.h"
 #include "driverlib/uart.h"
+#include "driverlib/pin_map.h"
 
 //**********************PROTOTIPOS DE FUNCIONES***********************
 
-void UARTconfig(void);
+void UART1config(void);
+void UART2config(void);
 void UARTIntHandler(void);
 void SendString(char* frase);
 void display(uint8_t valor);
@@ -41,19 +43,21 @@ void main(void)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
     //Se configuran como salida los LEDS de los distintos parqueos
     GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_4|GPIO_PIN_5);
     GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7);
     GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6);
     //Se configuran como entrada los push de los distintos parqueos
-    GPIOPinTypeGPIOInput(GPIO_PORTC_BASE, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7);
-    IntMasterEnable();
-    UARTconfig();
+    GPIOPinTypeGPIOInput(GPIO_PORTC_BASE, GPIO_PIN_6|GPIO_PIN_7);
+    GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_2|GPIO_PIN_3);
+    //IntMasterEnable();
+    UART1config();
 
 //******************************MAIN LOOP********************************
     while(1){
-        Parqueo1 = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_4);
-        Parqueo2 = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_5);
+        Parqueo1 = GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_2);
+        Parqueo2 = GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_3);
         Parqueo3 = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_6);
         Parqueo4 = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_7);
 
@@ -110,7 +114,7 @@ void main(void)
                     suma+=1;
                 }
         display(suma);
-        UARTCharPut(UART2_BASE, Disp);
+        UARTCharPut(UART1_BASE, Disp);
         suma = 0;
 
     }
@@ -126,20 +130,38 @@ void UARTIntHandler(void){
 
 }
 
-void UARTconfig(void){
+void UART2config(void){
     //Aqui se configura el UART2
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART2); //Activar clock para UART2
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);//Activar clock para puerto D de la tiva
+    GPIOPinConfigure(GPIO_PD6_U2RX);
+    GPIOPinConfigure(GPIO_PD7_U2TX);
     GPIOPinTypeUART(GPIO_PORTD_BASE, GPIO_PIN_6|GPIO_PIN_7); //Se activan los pines 6 y 7 del puerto D
+    UARTClockSourceSet(UART2_BASE, UART_CLOCK_PIOSC);
     UARTConfigSetExpClk(UART2_BASE,SysCtlClockGet(), 115200, UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
-    UARTIntEnable(UART2_BASE, UART_INT_RT | UART_INT_RX); //Se activa interrupcion cada vez que se reciba un dato
-    UARTIntRegister(UART2_BASE, UARTIntHandler); //Se le coloca el nombre a la funcion del handler
+    UARTEnable(UART2_BASE);
+   // UARTIntEnable(UART2_BASE, UART_INT_RT | UART_INT_RX); //Se activa interrupcion cada vez que se reciba un dato
+   // UARTIntRegister(UART2_BASE, UARTIntHandler); //Se le coloca el nombre a la funcion del handler
+}
+
+void UART1config(void){
+    //Aqui se configura el UART2
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1); //Activar clock para UART2
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);//Activar clock para puerto D de la tiva
+    GPIOPinConfigure(GPIO_PC4_U1RX);
+    GPIOPinConfigure(GPIO_PC5_U1TX);
+    GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_4|GPIO_PIN_5); //Se activan los pines 6 y 7 del puerto D
+    //UARTClockSourceSet(UART1_BASE, UART_CLOCK_PIOSC);
+    UARTConfigSetExpClk(UART1_BASE,SysCtlClockGet(), 115200, UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
+    UARTEnable(UART1_BASE);
+   // UARTIntEnable(UART2_BASE, UART_INT_RT | UART_INT_RX); //Se activa interrupcion cada vez que se reciba un dato
+   // UARTIntRegister(UART2_BASE, UARTIntHandler); //Se le coloca el nombre a la funcion del handler
 }
 
 void SendString(char* frase){
     //Funcion para poder enviar string mediante UART
     while (*frase){
-        UARTCharPut(UART2_BASE, *frase++);
+        UARTCharPut(UART1_BASE, *frase++);
     }
 }
 
