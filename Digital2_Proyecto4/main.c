@@ -16,9 +16,6 @@
 //**********************PROTOTIPOS DE FUNCIONES***********************
 
 void UART1config(void);
-void UART2config(void);
-void UARTIntHandler(void);
-void SendString(char* frase);
 void display(uint8_t valor);
 
 /**
@@ -56,11 +53,14 @@ void main(void)
 
 //******************************MAIN LOOP********************************
     while(1){
+        //Se leen las entradas de los sensores (botones) para cada parqueo
         Parqueo1 = GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_2);
         Parqueo2 = GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_3);
         Parqueo3 = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_6);
         Parqueo4 = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_7);
 
+        //Para cada parqueo, se evalua si la variable correspondiente leída anteriormente
+        //está en 0 y se enciende la luz verde y apaga la luz roja, y viceversa
         //**PARQUEO 1**
         if (Parqueo1 == 0){ //Parqueo 1 esta ocupado
             GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_4|GPIO_PIN_5, 16); //Se enciende led roja
@@ -101,6 +101,7 @@ void main(void)
             Disp |= 8;   //Set del bit 3
         }
 
+        //Se suma en la variable suma, la cantidad total de parqueos disponibles, evaluando cada bit de la variable Disp
         if (1 & Disp){
                     suma+=1;
                 }
@@ -113,9 +114,10 @@ void main(void)
         if (8 & Disp){
                     suma+=1;
                 }
-        display(suma);
-        UARTCharPut(UART1_BASE, Disp);
-        suma = 0;
+
+        display(suma); //Se despliega en el display la cantidad total de parqueos disponibles
+        UARTCharPut(UART1_BASE, Disp); //Se envía el valor de Disp al ESP32
+        suma = 0;  //Se resetea el valor de suma para la proxima lectura de la disponibilidad
 
     }
 
@@ -124,63 +126,38 @@ void main(void)
 //**********************************FUNCIONES*********************************************
 
 
-void UARTIntHandler(void){
-    UARTIntClear(UART2_BASE, UART_INT_RT | UART_INT_RX);
-
-
-}
-
-void UART2config(void){
-    //Aqui se configura el UART2
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART2); //Activar clock para UART2
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);//Activar clock para puerto D de la tiva
-    GPIOPinConfigure(GPIO_PD6_U2RX);
-    GPIOPinConfigure(GPIO_PD7_U2TX);
-    GPIOPinTypeUART(GPIO_PORTD_BASE, GPIO_PIN_6|GPIO_PIN_7); //Se activan los pines 6 y 7 del puerto D
-    UARTClockSourceSet(UART2_BASE, UART_CLOCK_PIOSC);
-    UARTConfigSetExpClk(UART2_BASE,SysCtlClockGet(), 115200, UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
-    UARTEnable(UART2_BASE);
-   // UARTIntEnable(UART2_BASE, UART_INT_RT | UART_INT_RX); //Se activa interrupcion cada vez que se reciba un dato
-   // UARTIntRegister(UART2_BASE, UARTIntHandler); //Se le coloca el nombre a la funcion del handler
-}
 
 void UART1config(void){
-    //Aqui se configura el UART2
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1); //Activar clock para UART2
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);//Activar clock para puerto D de la tiva
+    //Aqui se configura el UART1
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1); //Activar clock para UART1
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);//Activar clock para puerto C de la tiva
     GPIOPinConfigure(GPIO_PC4_U1RX);
     GPIOPinConfigure(GPIO_PC5_U1TX);
     GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_4|GPIO_PIN_5); //Se activan los pines 6 y 7 del puerto D
-    //UARTClockSourceSet(UART1_BASE, UART_CLOCK_PIOSC);
     UARTConfigSetExpClk(UART1_BASE,SysCtlClockGet(), 115200, UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
     UARTEnable(UART1_BASE);
    // UARTIntEnable(UART2_BASE, UART_INT_RT | UART_INT_RX); //Se activa interrupcion cada vez que se reciba un dato
    // UARTIntRegister(UART2_BASE, UARTIntHandler); //Se le coloca el nombre a la funcion del handler
 }
 
-void SendString(char* frase){
-    //Funcion para poder enviar string mediante UART
-    while (*frase){
-        UARTCharPut(UART1_BASE, *frase++);
-    }
-}
 
 void display(uint8_t valor){
+    //Dependiendo del valor del parametro se encienden ciertos leds del display para mostrar visualmente el numero correspondiente
     switch(valor){
         case 0:
             GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 95); //Se encienden los pines para mostrar un 0
             break;
         case 1:
-                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 80); //Se encienden los pines para mostrar un 0
+                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 80); //Se encienden los pines para mostrar un 1
                     break;
         case 2:
-                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 62); //Se encienden los pines para mostrar un 0
+                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 62); //Se encienden los pines para mostrar un 2
                     break;
         case 3:
-                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 122); //Se encienden los pines para mostrar un 0
+                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 122); //Se encienden los pines para mostrar un 3
                     break;
         case 4:
-                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 113); //Se encienden los pines para mostrar un 0
+                    GPIOPinWrite(GPIO_PORTB_BASE, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, 113); //Se encienden los pines para mostrar un 4
                     break;
     }
 
